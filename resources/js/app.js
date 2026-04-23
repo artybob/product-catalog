@@ -4,10 +4,7 @@ import '../css/app.css';
 import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { createPinia } from 'pinia';
-import PrimeVue from 'primevue/config';
-import 'primevue/resources/themes/lara-light-blue/theme.css';
-import 'primevue/resources/primevue.css';
-import 'primeicons/primeicons.css';
+import { ZiggyVue } from 'ziggy-js';
 
 createInertiaApp({
     resolve: name => {
@@ -18,7 +15,10 @@ createInertiaApp({
         const app = createApp({ render: () => h(App, props) });
         app.use(plugin);
         app.use(createPinia());
-        app.use(PrimeVue);
+        app.use(ZiggyVue);
+
+        app.config.globalProperties.$route = route;
+
         app.mount(el);
     },
     progress: {

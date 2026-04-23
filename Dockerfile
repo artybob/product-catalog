@@ -12,7 +12,9 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     nginx \
     supervisor \
-    libzip-dev
+    libzip-dev \
+    nodejs \
+    npm
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
