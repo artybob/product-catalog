@@ -3,73 +3,81 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
+use App\Services\ProductService;
 use App\Http\Resources\ProductResource;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class ProductController extends Controller
 {
-    /**
-     * Display a listing of the products.
-     */
+    protected $productService;
+
+    public function __construct(ProductService $productService)
+    {
+        $this->productService = $productService;
+    }
+
     public function index(Request $request)
     {
-        $query = Product::with('category');
+        $filters = [
+            'category_id' => $request->get('category_id'),
+            'search' => $request->get('search'),
+            'price_min' => $request->get('price_min'),
+            'price_max' => $request->get('price_max'),
+        ];
 
-        if ($request->has('category_id') && $request->category_id) {
-            $query->where('category_id', $request->category_id);
-        }
+        $perPage = $request->get('per_page', 15);
 
-        if ($request->has('search') && $request->search) {
-            $query->where('name', 'ilike', '%' . $request->search . '%');
-        }
-
-        $products = $query->paginate(15);
+        $products = $this->productService->getAllProducts(array_filter($filters), $perPage);
 
         return ProductResource::collection($products);
     }
 
-    /**
-     * Display the specified product.
-     */
     public function show($id)
     {
-        $product = Product::with('category')->findOrFail($id);
-
-        return new ProductResource($product);
+        try {
+            $product = $this->productService->getProductById($id);
+            return new ProductResource($product);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Internal server error'], 500);
+        }
     }
 
-    /**
-     * Store a newly created product.
-     */
     public function store(StoreProductRequest $request)
     {
-        $product = Product::create($request->validated());
-
-        return new ProductResource($product->load('category'));
+        try {
+            $product = $this->productService->createProduct($request->validated());
+            return new ProductResource($product->load('category'));
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to create product'], 500);
+        }
     }
 
-    /**
-     * Update the specified product.
-     */
     public function update(UpdateProductRequest $request, $id)
     {
-        $product = Product::findOrFail($id);
-        $product->update($request->validated());
-
-        return new ProductResource($product->load('category'));
+        try {
+            $product = $this->productService->updateProduct($id, $request->validated());
+            return new ProductResource($product->load('category'));
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to update product'], 500);
+        }
     }
 
-    /**
-     * Remove the specified product.
-     */
     public function destroy($id)
     {
-        $product = Product::findOrFail($id);
-        $product->delete();
-
-        return response()->json(['message' => 'Product deleted successfully'], 200);
+        try {
+            $this->productService->deleteProduct($id);
+            return response()->json(['message' => 'Product deleted successfully'], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to delete product'], 500);
+        }
     }
 }

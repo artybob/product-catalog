@@ -3,18 +3,25 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
+use App\Services\CategoryService;
 use App\Http\Resources\CategoryResource;
 
 class CategoryController extends Controller
 {
-    /**
-     * Display a listing of categories (without pagination).
-     */
+    protected $categoryService;
+
+    public function __construct(CategoryService $categoryService)
+    {
+        $this->categoryService = $categoryService;
+    }
+
     public function index()
     {
-        $categories = Category::all();
-
-        return CategoryResource::collection($categories);
+        try {
+            $categories = $this->categoryService->getAllCategories();
+            return CategoryResource::collection($categories);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to fetch categories'], 500);
+        }
     }
 }
