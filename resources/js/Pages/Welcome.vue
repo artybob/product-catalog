@@ -60,20 +60,20 @@
         </div>
 
         <!-- Pagination -->
-        <div class="mt-8 flex justify-center" v-if="pagination.last_page > 1">
+        <div v-if="pagination.last_page > 1" class="mt-8 flex justify-center">
             <div class="flex space-x-2">
                 <button
-                    v-for="page in pagination.links"
-                    :key="page.label"
-                    @click="goToPage(page.url)"
-                    v-html="page.label"
-                    :disabled="!page.url || page.active"
+                    v-for="link in pagination.links"
+                    :key="link.label"
+                    @click="goToPage(link.url)"
+                    v-html="link.label"
+                    :disabled="!link.url || link.active"
                     class="px-3 py-2 rounded-md text-sm font-medium"
                     :class="{
-                        'bg-blue-600 text-white': page.active,
-                        'bg-white text-gray-700 hover:bg-gray-50': !page.active && page.url,
-                        'bg-gray-100 text-gray-400 cursor-not-allowed': !page.url
-                    }"
+                'bg-blue-600 text-white': link.active,
+                'bg-white text-gray-700 hover:bg-gray-50': !link.active && link.url,
+                'bg-gray-100 text-gray-400 cursor-not-allowed': !link.url
+            }"
                 />
             </div>
         </div>
@@ -96,16 +96,19 @@ const pagination = ref({
     links: []
 });
 
-const fetchProducts = async () => {
+const fetchProducts = async (page = 1) => {
     loading.value = true;
     try {
-        const params = selectedCategory.value ? { category_id: selectedCategory.value } : {};
+        const params = { page };
+        if (selectedCategory.value) params.category_id = selectedCategory.value;
+
         const response = await axios.get('/api/products', { params });
-        products.value = response.data.data;
+
+        products.value = response.data.data || [];
         pagination.value = {
-            current_page: response.data.current_page,
-            last_page: response.data.last_page,
-            links: response.data.links
+            current_page: response.data.meta?.current_page || 1,
+            last_page: response.data.meta?.last_page || 1,
+            links: response.data.meta?.links || []
         };
     } catch (error) {
         console.error('Error fetching products:', error);
@@ -129,7 +132,9 @@ const filterProducts = () => {
 
 const goToPage = (url) => {
     if (url) {
-        window.location.href = url;
+        const urlParams = new URL(url);
+        const page = urlParams.searchParams.get('page');
+        fetchProducts(page);
     }
 };
 

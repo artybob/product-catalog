@@ -36,7 +36,7 @@
                     </div>
                 </div>
 
-                <div v-if="error" class="text-red-600 text-sm text-center">
+                <div v-if="error" class="text-red-600 text-sm text-center bg-red-50 p-2 rounded">
                     {{ error }}
                 </div>
 
@@ -57,9 +57,8 @@
 <script setup>
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
-import { useAuthStore } from '@/Stores/auth';
+import axios from 'axios';
 
-const authStore = useAuthStore();
 const form = ref({
     email: 'admin@example.com',
     password: 'password123'
@@ -71,14 +70,14 @@ const handleLogin = async () => {
     loading.value = true;
     error.value = '';
 
-    const result = await authStore.login(form.value);
+    try {
+        await axios.post('/login', form.value);
 
-    if (result.success) {
-        router.visit(route('admin.products'));
-    } else {
-        error.value = result.error;
+        window.location.href = '/admin/products';
+
+    } catch (err) {
+        error.value = err.response?.data?.message || 'Invalid credentials';
+        loading.value = false;
     }
-
-    loading.value = false;
 };
 </script>

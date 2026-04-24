@@ -5,6 +5,7 @@ import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { createPinia } from 'pinia';
 import { ZiggyVue } from 'ziggy-js';
+import { useAuthStore } from './Stores/auth';
 
 createInertiaApp({
     resolve: name => {
@@ -13,11 +14,14 @@ createInertiaApp({
     },
     setup({ el, App, props, plugin }) {
         const app = createApp({ render: () => h(App, props) });
+        const pinia = createPinia();
+
         app.use(plugin);
-        app.use(createPinia());
+        app.use(pinia);
         app.use(ZiggyVue);
 
-        app.config.globalProperties.$route = route;
+        const authStore = useAuthStore(pinia);
+        authStore.init();
 
         app.mount(el);
     },
