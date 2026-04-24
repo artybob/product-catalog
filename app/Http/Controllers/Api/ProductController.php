@@ -18,9 +18,12 @@ class ProductController extends Controller
     {
         $query = Product::with('category');
 
-        // Фильтрация по категории
         if ($request->has('category_id') && $request->category_id) {
             $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->has('search') && $request->search) {
+            $query->where('name', 'ilike', '%' . $request->search . '%');
         }
 
         $products = $query->paginate(15);
